@@ -17,11 +17,13 @@ export async function getTopFilms() {
 
 export async function getTopActors() {
   const [rows] = await connection.query(`
-    SELECT A.actor_id, A.first_name, A.last_name, COUNT(DISTINCT F.film_id) AS films
+    SELECT A.actor_id,
+           A.first_name,
+           A.last_name,
+           COUNT(F.film_id) AS films
     FROM actor A
     JOIN film_actor FA ON FA.actor_id = A.actor_id
-    JOIN film F ON F.film_id = FA.film_id
-    JOIN inventory I ON I.film_id = F.film_id
+    JOIN film F       ON F.film_id   = FA.film_id
     GROUP BY A.actor_id, A.first_name, A.last_name
     ORDER BY films DESC, A.last_name, A.first_name
     LIMIT 5
