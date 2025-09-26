@@ -4,6 +4,7 @@ import { env } from "./env.js";
 import landingRouter from "./pages/landing/landingRouter.js";
 import filmRouter from "./pages/films/filmRouter.js";
 import actorRouter from "./pages/actors/actorRouter.js";
+import customerRouter from "./pages/customers/customerRouter.js";
 
 export function buildApp() {
   const app = express();
@@ -15,6 +16,7 @@ export function buildApp() {
   app.use("/api/landing", landingRouter);
   app.use("/api/films", filmRouter);
   app.use("/api/actors", actorRouter);
+  app.use("/api/customers", customerRouter);
 
   return app;
 }

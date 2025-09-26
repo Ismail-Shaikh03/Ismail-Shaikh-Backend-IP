@@ -68,4 +68,3 @@ export async function searchFilms(q) {
   return rows;
 }
 
-//$
