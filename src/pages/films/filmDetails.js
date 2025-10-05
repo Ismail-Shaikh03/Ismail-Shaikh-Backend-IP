@@ -26,8 +26,7 @@ export async function getFilmDetails(id) {
     [id]
   );
 
-  return { ...film, 
-    categories: categories.map(x => x.name), actors };
+  return { ...film, categories: categories.map(x => x.name), actors };
 }
 
 export async function listFilms(limit = 100) {
@@ -67,4 +66,44 @@ export async function searchFilms(q) {
   );
   return rows;
 }
+
+export async function rentFilm(filmId, customerId) {
+  const [[cust]] = await connection.query(
+    `SELECT C.customer_id
+     FROM customer C
+     WHERE C.customer_id = ?`,
+    [customerId]
+  );
+  if (!cust) {
+    const e = new Error("Customer not found");
+    e.code = "NO_CUSTOMER";
+    throw e;
+  }
+
+  const [inv] = await connection.query(
+    `SELECT I.inventory_id
+     FROM inventory I
+     LEFT JOIN rental R
+       ON R.inventory_id = I.inventory_id
+      AND R.return_date IS NULL
+     WHERE I.film_id = ?
+       AND R.rental_id IS NULL
+     LIMIT 1`,
+    [filmId]
+  );
+  if (inv.length === 0) {
+    const e = new Error("No copies available");
+    e.code = "NO_STOCK";
+    throw e;
+  }
+
+  const inventoryId = inv[0].inventory_id;
+  const [res] = await connection.query(
+    `INSERT INTO rental (rental_date, inventory_id, customer_id, staff_id)
+     VALUES (NOW(), ?, ?, 1)`,
+    [inventoryId, customerId]
+  );
+  return { rental_id: res.insertId, inventory_id: inventoryId };
+}
+
 
