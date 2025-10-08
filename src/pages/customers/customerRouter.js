@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { index } from "./customerController.js";
+import { index, show } from "./customerController.js";
 
 const router = Router();
 router.get("/", index);
+router.get("/:id", show);
 export default router;
