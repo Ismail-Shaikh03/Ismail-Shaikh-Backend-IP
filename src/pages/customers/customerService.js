@@ -73,28 +73,23 @@ export async function createCustomer(payload) {
     throw e;
   }
   const safePhone = (phone && String(phone).trim()) || "000-000-0000";
-
   const [addrRes] = await connection.query(
     `INSERT INTO address (address, district, city_id, postal_code, phone, location, last_update)
      VALUES (?, ?, ?, ?, ?, ST_GeomFromText('POINT(0 0)'), NOW())`,
     [address.trim(), district.trim(), Number(city_id), postal_code ? String(postal_code).trim() : null, safePhone]
   );
-
   const address_id = addrRes.insertId;
-
   const [custRes] = await connection.query(
     `INSERT INTO customer (store_id, first_name, last_name, email, address_id, active, create_date, last_update)
      VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
     [1, first_name.trim(), last_name.trim(), email ? String(email).trim() : null, address_id, 1]
   );
-
   const [[row]] = await connection.query(
     `SELECT customer_id, first_name, last_name, email, active, create_date
      FROM customer
      WHERE customer_id = ?`,
     [custRes.insertId]
   );
-
   return row;
 }
 
@@ -104,6 +99,42 @@ export async function listCities() {
   );
   return rows;
 }
+
+export async function deleteCustomer(id) {
+  const [[exists]] = await connection.query(
+    `SELECT customer_id FROM customer WHERE customer_id = ?`,
+    [id]
+  );
+  if (!exists) return { notFound: true };
+
+  const [[{ activeRentals }]] = await connection.query(
+    `SELECT COUNT(*) AS activeRentals
+     FROM rental
+     WHERE customer_id = ? AND return_date IS NULL`,
+    [id]
+  );
+  if (activeRentals > 0)
+    return { blocked: true, message: "Customer has active rentals and cannot be deleted." };
+
+  const conn = await connection.getConnection();
+  try {
+    await conn.beginTransaction();
+    await conn.query(`DELETE FROM payment WHERE customer_id = ?`, [id]);
+    await conn.query(`DELETE FROM rental WHERE customer_id = ?`, [id]);
+    await conn.query(`DELETE FROM customer WHERE customer_id = ?`, [id]);
+    await conn.commit();
+    conn.release();
+    return { deleted: true, message: "Customer deleted successfully." };
+  } catch (e) {
+    await conn.rollback();
+    conn.release();
+    throw e;
+  }
+}
+
+
+
+
 
 
 
