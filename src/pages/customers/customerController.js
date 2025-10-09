@@ -1,25 +1,43 @@
-import { listCustomers, getCustomerDetails } from "./customerService.js";
+import { listCustomers, getCustomerDetails, createCustomer, listCities as getCities } from "./customerService.js";
 
 export async function index(req, res) {
   try {
-    const { q = "", page = 1 } = req.query;
-    const data = await listCustomers(q, page, 25);
+    const { q, page } = req.query;
+    const data = await listCustomers(q, page);
     res.json(data);
-  } catch (e) {
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }
 
 export async function show(req, res) {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: "Invalid id" });
   try {
-    const data = await getCustomerDetails(id);
-    if (!data) return res.status(404).json({ error: "Not found" });
+    const data = await getCustomerDetails(req.params.id);
+    if (!data) return res.status(404).json({ error: "Customer not found" });
     res.json(data);
-  } catch {
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 }
+
+export async function create(req, res) {
+  try {
+    const data = await createCustomer(req.body);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+export async function listCities(req, res) {
+  try {
+    const data = await getCities();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+
 
 
