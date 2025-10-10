@@ -146,6 +146,42 @@ export async function deleteCustomer(id) {
     throw e;
   }
 }
+export async function updateCustomer(id, payload) {
+  const { first_name, last_name, email, address, district, city_id, postal_code, phone } = payload;
+
+  const [[cust]] = await connection.query(
+    `SELECT C.customer_id, A.address_id
+     FROM customer C
+     JOIN address A ON A.address_id = C.address_id
+     WHERE C.customer_id = ?`,
+    [id]
+  );
+  if (!cust) return { notFound: true };
+
+  await connection.query(
+    `UPDATE address
+     SET address = ?, district = ?, city_id = ?, postal_code = ?, phone = ?, last_update = NOW()
+     WHERE address_id = ?`,
+    [address, district, city_id, postal_code || null, phone || "000-000-0000", cust.address_id]
+  );
+
+  await connection.query(
+    `UPDATE customer
+     SET first_name = ?, last_name = ?, email = ?, last_update = NOW()
+     WHERE customer_id = ?`,
+    [first_name, last_name, email || null, id]
+  );
+
+  const [[updated]] = await connection.query(
+    `SELECT C.customer_id, C.first_name, C.last_name, C.email, C.active, C.create_date
+     FROM customer C
+     WHERE C.customer_id = ?`,
+    [id]
+  );
+
+  return updated;
+}
+
 
 
 

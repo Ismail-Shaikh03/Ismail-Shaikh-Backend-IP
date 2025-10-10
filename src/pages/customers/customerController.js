@@ -1,4 +1,4 @@
-import { listCustomers, getCustomerDetails, createCustomer, listCities as getCities, deleteCustomer } from "./customerService.js";
+import { listCustomers, getCustomerDetails, createCustomer, listCities as getCities, deleteCustomer, updateCustomer } from "./customerService.js";
 
 export async function index(req, res) {
   try {
@@ -53,6 +53,21 @@ export async function destroy(req, res) {
       return res.status(200).json({ message: result.message, deleted: true });
 
     res.status(500).json({ error: "Unknown result" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+export async function update(req, res) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0)
+      return res.status(400).json({ error: "Invalid id" });
+
+    const data = await updateCustomer(id, req.body);
+    if (data.notFound)
+      return res.status(404).json({ error: "Customer not found" });
+
+    res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
